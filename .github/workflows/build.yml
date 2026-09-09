@@ -52,23 +52,15 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          build-args: |
-            AGENT_VERSION=${{ steps.versions.outputs.agent_version }}
-            HERMES_WEBUI_VERSION=${{ steps.versions.outputs.webui_version }}
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.versions.outputs.docker_tag }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
       # Slim variant: same versions, no local Playwright/Chromium
       # (INSTALL_BROWSER=false). Tag gets a -slim suffix; no `latest` alias.
+      # Built and pushed FIRST so the Docker Hub tags page (newest-first)
+      # reads: latest, {tag}, {tag}-slim.
+      # Reads the GHA cache but never writes it — this workflow must have
+      # exactly ONE cache-to writer (the full build below). Two mode=max
+      # multi-arch writers overflowed the 10GB GHA cache budget on the
+      # first v2026.7.20-0.52.113 run ("error writing layer blob:
+      # not_found", fixed only by a rerun).
       - name: Build and push slim variant
         uses: docker/build-push-action@v6
         with:
@@ -81,5 +73,21 @@ jobs:
             INSTALL_BROWSER=false
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.versions.outputs.docker_tag }}-slim
+          cache-from: type=gha
+
+      # Full image: pushes the version tag and `latest`. Sole cache-to
+      # writer in this workflow (see the slim step comment above).
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            AGENT_VERSION=${{ steps.versions.outputs.agent_version }}
+            HERMES_WEBUI_VERSION=${{ steps.versions.outputs.webui_version }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.versions.outputs.docker_tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
