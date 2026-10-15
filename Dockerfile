@@ -10,7 +10,7 @@
 #   hermes-dashboard — Built-in monitoring dashboard on port 9119
 #   hermes-webui     — Browser chat interface on port 8787
 #
-# Build:  podman build -t hermes-suite:2026.7.20-0.52.113 .
+# Build:  podman build -t hermes-suite:2026.9.24-0.52.458 .
 # Run:    podman-compose up -d
 # =============================================================================
 
@@ -19,8 +19,9 @@
 # This already contains: Python 3.13, Node.js, npm, Playwright, agent code,
 # the built-in web dashboard (hermes dashboard), the gateway, uv, and s6-overlay.
 # ---------------------------------------------------------------------------
-ARG AGENT_VERSION=v2026.7.20
+ARG AGENT_VERSION=v2026.9.24
 ARG ENABLE_WHATSAPP_BRIDGE=false
+
 FROM docker.io/nousresearch/hermes-agent:${AGENT_VERSION}
 
 USER root
@@ -67,7 +68,8 @@ ARG ENABLE_WHATSAPP_BRIDGE=false
 RUN if [ "$INSTALL_BROWSER" = "true" ]; then \
         cd /opt/hermes && \
         npm install --prefer-offline --no-audit && \
-        npx playwright install --with-deps chromium; \
+        npx playwright install --with-deps chromium --only-shell && \
+        npm cache clean --force; \
     else \
         rm -rf /opt/hermes/.playwright; \
     fi && \
@@ -77,8 +79,13 @@ RUN if [ "$INSTALL_BROWSER" = "true" ]; then \
 # ---------------------------------------------------------------------------
 # Stage 4: Install supervisord via uv (not available in Debian Trixie apt)
 # We install it into a dedicated venv at /opt/supervisor.
+# --python /usr/bin/python3: the agent v2026.9.24 base ships
+# /opt/hermes/.python-version ("3.11"), which makes uv use its own managed
+# CPython under /root/.local (mode 700) — the runtime user cannot execute
+# it ("bad interpreter: Permission denied"). Pin to the system interpreter,
+# matching the base image's own prebuilt /opt/hermes/.venv (python3.13).
 # ---------------------------------------------------------------------------
-RUN uv venv /opt/supervisor && \
+RUN uv venv --python /usr/bin/python3 /opt/supervisor && \
     uv pip install --python /opt/supervisor/bin/python3 supervisor && \
     ln -sf /opt/supervisor/bin/supervisord /usr/local/bin/supervisord && \
     ln -sf /opt/supervisor/bin/supervisorctl /usr/local/bin/supervisorctl
@@ -92,22 +99,40 @@ RUN mkdir -p /var/log/supervisor /var/run/supervisor && \
 # and set up its own venv using uv (avoids python3-venv package requirement).
 # The webui needs the agent's Python deps to import agent modules.
 # We install with the same extras the base image bakes into /opt/hermes/.venv
-# (all, messaging, anthropic, bedrock, azure-identity, hindsight) so the
-# webui's in-process agent has working memory and provider backends (#16).
+# (all, messaging, otlp, anthropic, bedrock, azure-identity, matrix,
+# google-chat) so the webui's in-process agent has working memory and
+# provider backends (#16). hindsight is no longer an image extra upstream —
+# it is a catalog plugin whose deps lazy-install at plugin-install time
+# into the durable /opt/data volume (#38128).
 #
 # PIN to a specific tag for reproducible builds — never use 'master'.
 # ---------------------------------------------------------------------------
-ARG HERMES_WEBUI_VERSION=v0.52.113
+ARG HERMES_WEBUI_VERSION=v0.52.458
 RUN cd /opt && \
     git clone --depth 1 --branch ${HERMES_WEBUI_VERSION} \
         https://github.com/nesquena/hermes-webui.git hermes-webui && \
-    uv venv /opt/hermes-webui/venv && \
+    uv venv --python /usr/bin/python3 /opt/hermes-webui/venv && \
     uv pip install --python /opt/hermes-webui/venv/bin/python3 --no-cache-dir -r /opt/hermes-webui/requirements.txt && \
-    uv pip install --python /opt/hermes-webui/venv/bin/python3 --no-cache-dir -e "/opt/hermes[all,messaging,anthropic,bedrock,azure-identity,hindsight]" && \
+    uv pip install --python /opt/hermes-webui/venv/bin/python3 --no-cache-dir -e "/opt/hermes[all,messaging,otlp,anthropic,bedrock,azure-identity,matrix,google-chat]" && \
     rm -rf /opt/hermes-webui/.git
 
 # Bake version tag into the webui
 RUN echo "__version__ = '${HERMES_WEBUI_VERSION}'" > /opt/hermes-webui/api/_version.py
+
+# ---------------------------------------------------------------------------
+# Patch (upstream webui #7048): named profiles don't inherit root .env vars.
+# Mirrors the allowlist design from upstream PR #7060 (maintainer-reviewed
+# revision): only non-secret operator/runtime settings may fall back to the
+# root $HERMES_HOME/.env; profile-defined keys always win; secrets and
+# HERMES_WEBUI_* server keys are never inherited. Default profile is
+# unaffected (it reads the root .env as its own layer). DROP THIS PATCH when
+# a stable webui tag ships _ROOT_ENV_SHARE_ALLOWLIST in api/profiles.py.
+#
+# NOTE: the patch is a COPY+RUN of patches/webui-root-env-7048.py, not a
+# Dockerfile heredoc — podman 3.4.x (Jetson Nano / JetPack 4 era) predates
+# heredoc support and would parse the patch body as Dockerfile instructions.
+COPY patches/webui-root-env-7048.py /tmp/webui-root-env-7048.py
+RUN python3 /tmp/webui-root-env-7048.py && rm /tmp/webui-root-env-7048.py
 
 # Ensure venv is owned by hermes so runtime lazy-dep auto-install works (#6).
 RUN chown -R hermes:hermes /opt/hermes-webui/venv
@@ -131,9 +156,9 @@ RUN sed -i 's/auto = _auto_sso_response(request)/auto = None  # disabled: BasicA
 # Stage 7: Environment, labels, and runtime config
 # ---------------------------------------------------------------------------
 # Re-declare ARGs after FROM so they are available in LABEL
-ARG AGENT_VERSION=v2026.7.20
+ARG AGENT_VERSION=v2026.9.24
 ARG ENABLE_WHATSAPP_BRIDGE=false
-ARG HERMES_WEBUI_VERSION=v0.52.113
+ARG HERMES_WEBUI_VERSION=v0.52.458
 
 LABEL org.opencontainers.image.title="Hermes Suite" \
       org.opencontainers.image.description="All-in-one: hermes-agent + hermes-webui + hermes-dashboard" \
