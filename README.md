@@ -66,7 +66,7 @@ If you prefer not to build manually, use our pre-verified image tags from
 [Docker Hub](https://hub.docker.com/r/ascensionoid/hermes-suite):
 
 ```bash
-podman pull ascensionoid/hermes-suite:2026.7.20-0.52.113
+podman pull ascensionoid/hermes-suite:2026.9.24-0.52.458
 ```
 
 ### Manual Build with Specific Versions
@@ -75,9 +75,9 @@ If you need a specific combination, pass the versions as build arguments:
 
 ```bash
 podman build \
-  --build-arg AGENT_VERSION=v2026.7.20 \
-  --build-arg HERMES_WEBUI_VERSION=v0.52.113 \
-  -t hermes-suite:2026.7.20-0.52.113 .
+  --build-arg AGENT_VERSION=v2026.9.24 \
+  --build-arg HERMES_WEBUI_VERSION=v0.52.458 \
+  -t hermes-suite:2026.9.24-0.52.458 .
 ```
 
 Or use the build helper (reads from `versions.env`):
@@ -93,7 +93,7 @@ Or use the build helper (reads from `versions.env`):
 ./build.sh --docker-nolog
 
 # Override defaults:
-# ./build.sh --agent v2026.7.20 --webui v0.52.113
+# ./build.sh --agent v2026.9.24 --webui v0.52.458
 ```
 
 > **Docker compatibility:** Docker CE is auto-detected at container startup via /proc/1/cgroup.
@@ -107,6 +107,7 @@ Every release is an explicitly tested pair of Agent + WebUI on both amd64 and ar
 
 | Suite Tag | Agent Version | WebUI Version | Tested |
 |-----------|---------------|---------------|--------|
+| `2026.9.24-0.52.458` | v2026.9.24 | v0.52.458 | amd64 + arm64 |
 | `2026.7.20-0.52.113` | v2026.7.20 | v0.52.113 | amd64 + arm64 |
 
 > **Full version history:** https://github.com/sunnysktsang/hermes-suite/releases
@@ -139,9 +140,9 @@ Or manually with pinned versions:
 
 ```bash
 podman build \
-  --build-arg AGENT_VERSION=v2026.7.20 \
-  --build-arg HERMES_WEBUI_VERSION=v0.52.113 \
-  -t ascensionoid/hermes-suite:2026.7.20-0.52.113 .
+  --build-arg AGENT_VERSION=v2026.9.24 \
+  --build-arg HERMES_WEBUI_VERSION=v0.52.458 \
+  -t ascensionoid/hermes-suite:2026.9.24-0.52.458 .
 ```
 
 ### 3. Create the network (if not already existing)
@@ -248,8 +249,8 @@ podman exec hermes-suite supervisorctl status
 Edit `versions.env` to change the pinned versions and runtime settings:
 
 ```env
-AGENT_VERSION=v2026.7.20
-WEBUI_VERSION=v0.52.113
+AGENT_VERSION=v2026.9.24
+WEBUI_VERSION=v0.52.458
 
 # Runtime selector: auto (default), podman, docker, docker-nolog
 CONTAINER_RUNTIME=auto
@@ -288,6 +289,18 @@ Or override at build time:
 ```bash
 ./build.sh --agent v2026.4.16 --webui v0.50.244
 ```
+
+### What's not included
+
+The image is kept lean for edge devices; the following upstream components are
+excluded by design:
+
+- **Desktop (Bot Screen / Xvnc / Xfce)**: the upstream base image only installs
+  these when built with `HERMES_BOT_DESKTOP=1`; the default Hub image excludes
+  them and this suite consumes the default image.
+- **Voice / wake-word stack (sherpa, openwakeword, faster-whisper)**:
+  lazy-installed by the agent on demand; never baked into the image.
+- **WhatsApp bridge**: opt-in only (`ENABLE_WHATSAPP_BRIDGE=true`), see below.
 
 ### WhatsApp Bridge
 
@@ -477,6 +490,7 @@ hermes-suite/
 | x86_64 (WSL2) | amd64 | Ubuntu 22.04 | Podman 3.4.4 | All 3 services running |
 | x86_64 (WSL2) | amd64 | Ubuntu 22.04 | Docker CE 29.4.2 | All 3 services running |
 | Jetson Orin NX 16GB | arm64 | Ubuntu 22.04 | Podman 3.4.4 | All 3 services running |
+| Jetson Nano 4GB | arm64 | Ubuntu 18.04 | Podman 3.4.2 | All 3 services running |
 
 The base image `nousresearch/hermes-agent` provides multi-architecture manifests (amd64 + arm64).
 Podman and Docker automatically pull the correct variant for your platform.
