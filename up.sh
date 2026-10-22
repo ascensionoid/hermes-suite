@@ -63,6 +63,7 @@ if [ "$ENABLE_BROWSER" = "false" ]; then
     IMAGE_SUFFIX="-slim"
 fi
 export HERMES_SUITE_IMAGE_TAG="${AGENT_VER_CLEAN}-${WEBUI_VER_CLEAN}${IMAGE_SUFFIX}"
+export HERMES_SUITE_RELEASE_TAG="v${AGENT_VER_CLEAN}-${WEBUI_VER_CLEAN}"
 
 # For sudo: compose needs explicit env passthrough
 if [ "$USE_SUDO" = "true" ]; then

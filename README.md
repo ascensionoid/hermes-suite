@@ -69,6 +69,15 @@ If you prefer not to build manually, use our pre-verified image tags from
 podman pull ascensionoid/hermes-suite:2026.9.24-0.52.458
 ```
 
+### Release notifications
+
+The WebUI update banner checks for new hermes-suite releases on GitHub (at
+most once per 30 minutes; once per browser tab session). When a new release
+is published it shows the new version and the matching pinned image tag to
+pull, for example:
+
+    docker pull ascensionoid/hermes-suite:2026.9.24-0.52.458
+
 ### Manual Build with Specific Versions
 
 If you need a specific combination, pass the versions as build arguments:

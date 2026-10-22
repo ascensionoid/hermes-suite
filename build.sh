@@ -123,6 +123,11 @@ if [ "$ENABLE_BROWSER" = "false" ]; then
 fi
 IMAGE_TAG="ascensionoid/hermes-suite:${AGENT_VER_CLEAN}-${WEBUI_VER_CLEAN}${IMAGE_SUFFIX}"
 
+# Suite release tag for the in-app release check (GitHub release tag form:
+# leading v, no -slim suffix). Update this one line when the suite tag
+# convention changes; the check itself never parses versions.
+SUITE_RELEASE_TAG="v${AGENT_VER_CLEAN}-${WEBUI_VER_CLEAN}"
+
 # Persist the effective browser setting back to versions.env when it deviates
 # from what the file records. up.sh/down.sh derive the image tag from
 # versions.env; without this, "./build.sh --no-browser && ./up.sh" would
@@ -156,6 +161,7 @@ echo " Agent version:  ${AGENT_VERSION}"
 echo " WebUI version:  ${WEBUI_VERSION}"
 echo " Browser:        ${ENABLE_BROWSER}"
 echo " Image tag:      ${IMAGE_TAG}"
+echo " Suite release:  ${SUITE_RELEASE_TAG}"
 echo " Runtime:        ${CONTAINER_RUNTIME}"
 echo " Sudo:           ${USE_SUDO}"
 echo " WhatsApp:       ${ENABLE_WHATSAPP_BRIDGE}"
@@ -169,6 +175,8 @@ if [ "$BUILD_CMD" = "podman" ]; then
         --build-arg HERMES_WEBUI_VERSION="${WEBUI_VERSION}" \
         --build-arg ENABLE_WHATSAPP_BRIDGE="${ENABLE_WHATSAPP_BRIDGE}" \
         --build-arg INSTALL_BROWSER="${ENABLE_BROWSER}" \
+        --build-arg HERMES_SUITE_RELEASE_TAG="${SUITE_RELEASE_TAG}" \
+        --build-arg HERMES_SUITE_IMAGE_REF="${IMAGE_TAG}" \
         -t "${IMAGE_TAG}" \
         --format docker \
         "${BUILD_DIR}"
@@ -178,6 +186,8 @@ else
         --build-arg HERMES_WEBUI_VERSION="${WEBUI_VERSION}" \
         --build-arg ENABLE_WHATSAPP_BRIDGE="${ENABLE_WHATSAPP_BRIDGE}" \
         --build-arg INSTALL_BROWSER="${ENABLE_BROWSER}" \
+        --build-arg HERMES_SUITE_RELEASE_TAG="${SUITE_RELEASE_TAG}" \
+        --build-arg HERMES_SUITE_IMAGE_REF="${IMAGE_TAG}" \
         -t "${IMAGE_TAG}" \
         "${BUILD_DIR}"
 fi

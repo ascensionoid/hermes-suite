@@ -134,6 +134,24 @@ RUN echo "__version__ = '${HERMES_WEBUI_VERSION}'" > /opt/hermes-webui/api/_vers
 COPY patches/webui-root-env-7048.py /tmp/webui-root-env-7048.py
 RUN python3 /tmp/webui-root-env-7048.py && rm /tmp/webui-root-env-7048.py
 
+# ---------------------------------------------------------------------------
+# Patch: suite-release update check. When HERMES_SUITE_RELEASE_TAG is baked
+# (suite builds), the webui update banner reports hermes-suite releases
+# (github.com/sunnysktsang/hermes-suite) and the matching
+# ascensionoid/hermes-suite image tag instead of upstream webui releases and
+# ghcr.io/nesquena/hermes-webui (which a suite deployment cannot use).
+# Empty tag (non-suite builds of the webui alone) leaves upstream behavior
+# unchanged. DROP THIS PATCH when upstream webui ships a deployment-aware
+# release check natively.
+# NOTE: ARGs are declared in-stage (after FROM) so they expand in RUN/ENV;
+# global-scope ARGs before FROM do not (see the INSTALL_BROWSER note above).
+ARG HERMES_SUITE_RELEASE_TAG=""
+ARG HERMES_SUITE_IMAGE_REF=""
+ENV HERMES_SUITE_RELEASE_TAG=${HERMES_SUITE_RELEASE_TAG}
+ENV HERMES_SUITE_IMAGE_REF=${HERMES_SUITE_IMAGE_REF}
+COPY patches/webui-suite-release-check.py /tmp/webui-suite-release-check.py
+RUN python3 /tmp/webui-suite-release-check.py && rm /tmp/webui-suite-release-check.py
+
 # Ensure venv is owned by hermes so runtime lazy-dep auto-install works (#6).
 RUN chown -R hermes:hermes /opt/hermes-webui/venv
 

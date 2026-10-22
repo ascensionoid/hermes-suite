@@ -71,6 +71,8 @@ jobs:
             AGENT_VERSION=${{ steps.versions.outputs.agent_version }}
             HERMES_WEBUI_VERSION=${{ steps.versions.outputs.webui_version }}
             INSTALL_BROWSER=false
+            HERMES_SUITE_RELEASE_TAG=${{ github.ref_name }}
+            HERMES_SUITE_IMAGE_REF=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.versions.outputs.docker_tag }}-slim
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.versions.outputs.docker_tag }}-slim
           cache-from: type=gha
@@ -86,6 +88,8 @@ jobs:
           build-args: |
             AGENT_VERSION=${{ steps.versions.outputs.agent_version }}
             HERMES_WEBUI_VERSION=${{ steps.versions.outputs.webui_version }}
+            HERMES_SUITE_RELEASE_TAG=${{ github.ref_name }}
+            HERMES_SUITE_IMAGE_REF=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.versions.outputs.docker_tag }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.versions.outputs.docker_tag }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
