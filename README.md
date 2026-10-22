@@ -66,7 +66,7 @@ If you prefer not to build manually, use our pre-verified image tags from
 [Docker Hub](https://hub.docker.com/r/ascensionoid/hermes-suite):
 
 ```bash
-podman pull ascensionoid/hermes-suite:2026.9.24-0.52.458
+podman pull ascensionoid/hermes-suite:2026.9.24-0.52.492
 ```
 
 ### Release notifications
@@ -76,7 +76,7 @@ most once per 30 minutes; once per browser tab session). When a new release
 is published it shows the new version and the matching pinned image tag to
 pull, for example:
 
-    docker pull ascensionoid/hermes-suite:2026.9.24-0.52.458
+    docker pull ascensionoid/hermes-suite:2026.9.24-0.52.492
 
 ### Manual Build with Specific Versions
 
@@ -85,8 +85,8 @@ If you need a specific combination, pass the versions as build arguments:
 ```bash
 podman build \
   --build-arg AGENT_VERSION=v2026.9.24 \
-  --build-arg HERMES_WEBUI_VERSION=v0.52.458 \
-  -t hermes-suite:2026.9.24-0.52.458 .
+  --build-arg HERMES_WEBUI_VERSION=v0.52.492 \
+  -t hermes-suite:2026.9.24-0.52.492 .
 ```
 
 Or use the build helper (reads from `versions.env`):
@@ -102,7 +102,7 @@ Or use the build helper (reads from `versions.env`):
 ./build.sh --docker-nolog
 
 # Override defaults:
-# ./build.sh --agent v2026.9.24 --webui v0.52.458
+# ./build.sh --agent v2026.9.24 --webui v0.52.492
 ```
 
 > **Docker compatibility:** Docker CE is auto-detected at container startup via /proc/1/cgroup.
@@ -116,6 +116,7 @@ Every release is an explicitly tested pair of Agent + WebUI on both amd64 and ar
 
 | Suite Tag | Agent Version | WebUI Version | Tested |
 |-----------|---------------|---------------|--------|
+| `2026.9.24-0.52.492` | v2026.9.24 | v0.52.492 | amd64 + arm64 |
 | `2026.9.24-0.52.458` | v2026.9.24 | v0.52.458 | amd64 + arm64 |
 | `2026.7.20-0.52.113` | v2026.7.20 | v0.52.113 | amd64 + arm64 |
 
@@ -150,8 +151,8 @@ Or manually with pinned versions:
 ```bash
 podman build \
   --build-arg AGENT_VERSION=v2026.9.24 \
-  --build-arg HERMES_WEBUI_VERSION=v0.52.458 \
-  -t ascensionoid/hermes-suite:2026.9.24-0.52.458 .
+  --build-arg HERMES_WEBUI_VERSION=v0.52.492 \
+  -t ascensionoid/hermes-suite:2026.9.24-0.52.492 .
 ```
 
 ### 3. Create the network (if not already existing)
@@ -259,7 +260,7 @@ Edit `versions.env` to change the pinned versions and runtime settings:
 
 ```env
 AGENT_VERSION=v2026.9.24
-WEBUI_VERSION=v0.52.458
+WEBUI_VERSION=v0.52.492
 
 # Runtime selector: auto (default), podman, docker, docker-nolog
 CONTAINER_RUNTIME=auto
